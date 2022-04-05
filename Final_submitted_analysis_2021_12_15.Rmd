@@ -1,0 +1,292 @@
+---
+title: "RT vs PCR"
+author: "Seonjoo Lee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+library(dplyr)
+library(arsenal)
+library(epiR)
+library(ggplot2)
+```
+
+# Descriptives
+
+* Exclude cases with missing PCR
+
+* Any of familiy members hav positive in either saliva and nasal test, the whole family will be considered as positive.
+
+* Some cases with invalid RT. We treat them as missing.
+
+```{r}
+dat=read.csv('data/RAT_phase2_w_PCR.csv') %>%
+# dat=read.csv('data/RAT_phase2_w_PCR_2021_07_26.csv') %>%
+  data.frame(.) %>%
+  arrange(mobile) %>%
+  mutate( vvf_nasal = na_if(vvf_nasal,'NaN'),
+          vvf_saliva = na_if(vvf_saliva,'NaN')
+          ) %>%
+  mutate(vvf_nasal = na_if(vvf_nasal,'invalid'),
+         vvf_saliva = na_if(vvf_saliva,'invalid'),
+         ) %>%
+#  filter(vvf=='yes') %>%
+  mutate(rt_saliva2 = ifelse(is.nan(vvf_saliva), NA, 
+                             ifelse( vvf_saliva=='positive' | sec_saliva=='positive', 'positive', 'negative')),
+         rt_nasal2 = ifelse(is.na(vvf_nasal), NA, 
+                            ifelse( vvf_nasal=='positive' | sec_nasal=='positive', 'positive', 'negative')),
+         rt_saliva3 = ifelse(is.na(vvf_saliva), NA,
+                             ifelse( vvf_saliva=='positive' | sec_saliva=='positive' | thrd_saliva=='positive', 'positive', 'negative')),
+         rt_nasal3 = ifelse(is.na(vvf_nasal), NA, 
+                            ifelse( vvf_nasal=='positive' | sec_nasal=='positive' | thrd_nasal=='positive', 'positive', 'negative'))
+         ) %>%
+  mutate(rt1 = ifelse(is.na(vvf_saliva) | is.na(vvf_nasal),NA,
+                      ifelse(vvf_saliva=='positive' | vvf_nasal=='positive', 'positive', 'negative' )),
+         rt2 = ifelse(is.na(rt_saliva2) | is.na(rt_nasal2), NA,
+                     ifelse(rt_saliva2=='positive' | rt_nasal2=='positive', 'positive', 'negative' )),
+         rt3 = ifelse(is.na(rt_saliva3) | is.na(rt_nasal3), NA,
+                      ifelse(rt_saliva3=='positive' | rt_nasal3=='positive', 'positive', 'negative' )))%>%
+  mutate(familyid = paste(mobile,sample_id,sep='_')) %>%
+  mutate(num_family = ( sec_person=='yes') + ( thrd_person=='yes'))
+
+
+#dat %>% select(vvf_saliva, sec_saliva, thrd_saliva, rt_saliva, vvf_nasal, sec_nasal, thrd_nasal,rt_nasal,rt)
+#table(duplicated(dat$mobile))
+
+#aa=dat %>% filter(mobile %in% dat$mobile[duplicated(dat$mobile)==TRUE])
+
+# dat.long = rbind(
+#   dat %>% select(familyid,sample_id, age, sex, rt_saliva, rt_nasal, rt, PCR_result),
+#   dat %>% select(familyid,sec_sample_id, sec_age, sec_sex, rt_saliva, rt_nasal, rt, PCR_sec_result) %>%
+#     rename(sample_id=sec_sample_id, age=sec_age,sex=sec_sex, PCR_result=PCR_sec_result),
+#   dat %>% select(familyid,thrd_sample_id, thrd_age, thrd_sex, rt_saliva, rt_nasal, rt, PCR_thrd_result)%>%
+#     rename(sample_id=thrd_sample_id, age=thrd_age,sex=thrd_sex,PCR_result=PCR_thrd_result)
+# ) %>%
+#   filter(is.na(PCR_result)==FALSE) %>%
+#   mutate(PCR_result = ifelse(PCR_result>0, 1, 0))
+
+run_anal<-function(x=dat$vvf_saliva,y=dat$PCR_result, method.label='test'){
+  tab <- table(x,y)[2:1,2:1]
+  print(tab)
+  re=epi.tests(tab, conf.level = 0.95)
+  print(re)
+  print(summary(re)[5,])
+  tmp=data.frame(method=method.label,summary(re))
+  tmp$value=row.names(tmp)
+  row.names(tmp)<-c()
+  return(tmp)
+}
+```
+
+# Descriptives
+
+* 17 subjects were removed from the `r nrow(dat)` entries due to 
+
+  + 9 participants were excluded due to vvf=no or NaN.
+
+  + 4 participants were excluded due to missing in either invalid vvf_saliva or vvf_nasal
+
+  + 2 additional participants were removed due to missing in PCR test
+  
+  + 2 additinal participants were removed due to invalidity of PCR test
+
+```{r}
+
+dat %>% filter(vvf!='yes' | is.na(vvf_nasal) |  is.na(vvf_saliva) | is.na(PCR_result) | PCR_result>1) %>%
+#  select(vvf, vvf_saliva, vvf_nasal, sec_nasal,thrd_nasal, rt_saliva2,rt_nasal2,rt_nasal3,rt1,rt2,rt3)
+#%>%
+  select(mobile, vvf, age,vvf_saliva,vvf_nasal,PCR_result)
+
+dat = dat %>% filter(vvf=='yes' & is.na(vvf_nasal)==FALSE  &  is.na(vvf_saliva)==FALSE &  is.na(PCR_result)==FALSE & PCR_result<2)
+```
+
+
+* Descriptives Table of the all family members
+
+```{r, results='asis'}
+library(reshape2)
+library(dplyr)
+
+dat$uniqueid = 1:nrow(dat)
+dat_tmp_saliva = dat %>% 
+  dplyr::select(uniqueid, vvf_saliva, sec_saliva, thrd_saliva) %>% 
+  melt(., id=c('uniqueid')) %>%
+  rename(saliva = value) %>%
+  mutate(fam = factor(variable, levels=c('vvf_saliva','sec_saliva','thrd_saliva'),labels=c('First','Second','Third')))%>%
+  select(-variable) 
+dat_tmp_nasal = dat %>% 
+  dplyr::select(uniqueid, vvf_nasal, sec_nasal, thrd_nasal) %>% 
+  melt(., id=c('uniqueid')) %>%
+  rename(nasal = value) %>%
+  mutate(fam = factor(variable, levels=c('vvf_nasal','sec_nasal','thrd_nasal'),labels=c('First','Second','Third')))%>%
+  select(-variable) 
+dat_tmp_rt = left_join(dat_tmp_saliva,dat_tmp_nasal)%>%
+  filter(saliva %in% c('negative', 'positive') | nasal %in% c('negative', 'positive'))
+
+ 
+dat_tmp_PCR = dat %>% 
+  dplyr::select(uniqueid, PCR_result, PCR_sec_result, PCR_thrd_result) %>% 
+  melt(., id='uniqueid') %>%
+  rename(PCR = value) %>%
+  mutate(fam = factor(variable, levels=c('PCR_result','PCR_sec_result','PCR_thrd_result'),labels=c('First','Second','Third'))) %>%
+  select(-variable)
+ 
+dat_tmp_age = dat %>% 
+  dplyr::select(uniqueid, age, sec_age, thrd_age) %>% 
+  melt(., id='uniqueid') %>%
+  rename(age = value) %>%
+  mutate(fam = factor(variable, levels=c('age','sec_age','thrd_age'),labels=c('First','Second','Third')))%>%
+  select(-variable)
+ 
+dat_tmp_sex = dat %>% 
+  dplyr::select(uniqueid, sex, sec_sex, thrd_sex) %>% 
+  melt(., id='uniqueid') %>%
+  rename(sex = value) %>%
+  mutate(fam = factor(variable, levels=c('sex','sec_sex','thrd_sex'),labels=c('First','Second','Third')))%>%
+  select(-variable)
+
+ 
+datlong = left_join(dat_tmp_rt,dat_tmp_PCR)  %>%
+  left_join(., dat_tmp_age) %>%
+  left_join(., dat_tmp_sex)
+
+summary(tableby(fam ~ PCR + sex + age, datlong %>% mutate(PCR=factor(PCR))))
+```
+
+
+# Results {.tabset}
+
+## PCR 1 vs. RAT 1 {.tabset}
+
+```{r, results='asis'}
+summary(tableby(PCR_result~vvf_saliva + vvf_nasal+ rt1, dat))
+```
+
+### saliva
+```{r}
+re_11_s <- run_anal(dat$vvf_saliva, dat$PCR_result, method.label='PCR 1 vs. RAT 1, saliva')
+```
+
+### nasal
+```{r}
+re_11_n <- run_anal(dat$vvf_nasal, dat$PCR_result, method.label='PCR 1 vs. RAT 1, nasal')
+```
+
+### either saliva/nasal
+```{r}
+re_11_sn <- run_anal(dat$rt1, dat$PCR_result, method.label='PCR 1 vs. RAT 1, both')
+```
+
+
+### cross-table
+```{r}
+table(paste('sal',dat$vvf_saliva), paste('nas',dat$vvf_nasal),paste('pcr',dat$PCR_result))
+
+```
+
+
+## PCR 1 vs. RAT 1 and 2 {.tabset}
+
+* We include the family with at least one other family member.
+
+```{r, results='asis'}
+dat2 = dat %>% filter(num_family>0)
+summary(tableby(PCR_result~rt_saliva2 + rt_nasal2+ rt2+num_family, dat2))
+```
+
+### saliva
+```{r}
+re_22_s <- run_anal(dat2$rt_saliva2, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2, saliva\n with at least one family member')
+```
+
+### nasal
+```{r}
+re_22_n <- run_anal(dat2$rt_nasal2, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2, nasal\n with at least one family member')
+```
+
+### either saliva/nasal
+```{r}
+re_22_sn <- run_anal(dat2$rt2, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2, both\n with at least one family member')
+```
+
+
+## PCR 1 vs. RAT 1, 2  and 3{.tabset}
+
+* We include the family with all three family members.
+
+```{r, results='asis'}
+dat2 = dat %>% filter(num_family>1)
+summary(tableby(PCR_result~rt_saliva3 + rt_nasal3+ rt3+num_family, dat2))
+```
+
+### saliva
+```{r}
+re_23_s <- run_anal(dat2$rt_saliva3, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2 & 3, saliva\n with 3 family members')
+```
+
+### nasal
+```{r}
+re_23_n <- run_anal(dat2$rt_nasal3, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2 & 3, nasal\n with 3 family members')
+```
+
+### either saliva/nasal
+```{r}
+re_23_sn <- run_anal(dat2$rt3, dat2$PCR_result, method.label='PCR 1 vs. RAT 1 & 2 & 3, both\n with 3 family members')
+```
+
+
+## Aggregated Figure
+
+```{r}
+figdat = rbind(re_11_s,re_11_n,re_11_sn,
+ #              re_12_s,re_12_n,re_12_sn,
+ #              re_13_s,re_13_n,re_13_sn,
+               re_22_s,re_22_n,re_22_sn,
+               re_23_s,re_23_n,re_23_sn
+               ) 
+
+figdat$method = gsub('\n with 3 family members','',figdat$method)
+figdat$method = gsub('\n with at least one family member','',figdat$method)
+
+figdat$method2=unlist(lapply(figdat$method, function(x)strsplit(x,'[,]')[[1]][2]))
+
+figdat$testessay=unlist(lapply(figdat$method, function(x)strsplit(strsplit(x,',')[[1]][2],'\n')[[1]][1]))
+figdat$note=unlist(lapply(figdat$method, function(x)strsplit(strsplit(x,',')[[1]][2],'\n')[[1]][2]))
+
+
+figdat$testtype=paste(unlist(lapply(figdat$method, function(x)strsplit(x,'[,]')[[1]][1])), 
+                      unlist(lapply(figdat$method, function(x)strsplit(strsplit(x,',')[[1]][2],'\n')[[1]][2])),
+                      sep='\n')
+figdat$testtype=gsub('NA','',figdat$testtype)
+figdat$testessay = factor(figdat$testessay , levels=c(' saliva',' nasal',' both'))
+
+ sp<-ggplot( figdat %>% filter(value=='sp'), aes(x=testtype, y=est, color=testtype)) + 
+    ylab('Specificity')   + xlab('')+
+    geom_point(size=2, pch=15) +
+    facet_grid(.~testessay ) +
+    geom_errorbar(aes(ymin=lower, ymax=upper)) + 
+    theme_minimal()+ 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position='none') + 
+   ylim(c(0.3,1))
+ 
+ ss<- ggplot( figdat %>% filter(value=='se'), aes(x=testtype, y=est, color=testtype)) + 
+    ylab('Sensitivity')  + xlab('')+
+    geom_point(size=2, pch=15) +
+    facet_grid(.~testessay ) +
+    geom_errorbar(aes(ymin=lower, ymax=upper)) + 
+    theme_minimal()+ 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position='none')+ 
+   ylim(c(0.3,1))
+  
+ sp
+ 
+ ss
+ 
+ png('Fig1_sssp.png',width=3000, height=1200, res=300)
+ gridExtra::grid.arrange(ss,sp,ncol=2);dev.off()
+ 
+```
