@@ -6,4 +6,4 @@ Code and data used in: Sania A, Alam A, Alamgir ASM, Andrecka J, Brum E, Chadwic
 
 Data are provided in the subfolder *data*. R scripts create and save figures to subfolder *figs*.
 
-For more information about this work, please contact Ayesha Sania: XXXXXX
+For more information about this work, please contact Dr Ayesha Sania: as4823@cumc.columbia.edu
