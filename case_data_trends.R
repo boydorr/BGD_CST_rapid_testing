@@ -290,8 +290,21 @@ p
 ggsave(p, file = "figs/testing_comparison.pdf", units = "cm", dpi = "retina", width = 10, height = 15)
 
 
+df_long$prev <- rep(c("5% prevalence","40% prevalence"),4) 
+df_long$res <- c(rep("True +ve",4),rep("False -ve",4)) 
 
-high_prev = testing(0.4, budget=10000, test1 = 5, test2 = 30, 
-                    sensitivity1 = 0.8, sensitivity2 = 0.99)
+p <- ggplot(data=df_long, aes(x=type, y=tests, fill = res)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~prev) +
+  scale_y_continuous(name = "Tests performed") +
+  theme_clean() + theme(axis.title=element_text(size=15), axis.text=element_text(size=12), 
+                        legend.text=element_text(size=12), legend.title=element_text(size=12), 
+                        plot.background = element_rect(color = "white"), legend.background = element_rect(color = NA),
+                        strip.text=element_text(size=15), legend.position = c(0.8,0.8)) + labs(fill = "Results") + scale_fill_brewer(palette="Paired")
+p
+ggsave(p, file = "figs/Fig4_testing_comparison.pdf", units = "cm", dpi = "retina", width = 10, height = 15)
+
+
+
 
 
