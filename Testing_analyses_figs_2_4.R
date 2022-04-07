@@ -1,9 +1,5 @@
 #########################################################################
-# Use pre-prepared A2i data and develop time-series
-#########################################################################
-# Key learning outcomes are how to plot timeseries 
-# and how to use loops to look at plots per district
-# and pull out some specific statistics (overall and for specific districts)
+# CST testing analysis for Sania et al. 2022
 #########################################################################
 
 ## Load libraries 
@@ -126,43 +122,8 @@ p<- cst_wkly_long %>%
                         plot.background = element_rect(color = "white"), legend.background = element_rect(color = NA),
                         strip.text=element_text(size=15), legend.position = c(0.1,0.8))
 p
-ggsave(p, file = "figs/weekly_testing_dhaka.pdf", units = "cm", dpi = "retina", width = 16, height = 9)
+ggsave(p, file = "figs/Fig3_weekly_testing_dhaka.pdf", units = "cm", dpi = "retina", width = 16, height = 9)
 
-#'----------------------------------------------------------------
-#'  * Examine daily cases and daily tests*
-p <- ggplot(data.daily, aes(x=date)) + 
-      geom_line(aes(y = cases, color="Cases"), alpha=0.4) +
-      geom_line(aes(y = tests, color="Tests"), alpha=0.4) +
-      theme +
-      scale_x_date(date_breaks="1 month", date_labels = "%b") + 
-      scale_y_continuous(sec.axis = sec_axis(~ .*10, name = "Tests")) + 
-      labs(x="2020 - 2021", y="Cases", color="Legend") +
-  theme(legend.position = c(0.2, 0.8), legend.title = element_blank(), legend.background = element_blank())
-p
-ggsave(p, file = "figs/daily_cases_dhaka.pdf", units = "cm", dpi = "retina", width = 20, height = 15)
-
-# Daily cases and daily tests per 100,000
-p <- ggplot(data.daily, aes(x=date)) + 
-        geom_line(aes(y = cases.100k,color="cases.100k"), alpha=0.5) +
-        geom_smooth(aes(y = cases.100k, color="cases.100k"), span=0.15) +
-        geom_line(aes(y = tests.100k,color="tests.100k"), alpha=0.5) +
-        geom_smooth(aes(y = tests.100k, color="tests.100k"), span=0.15) +
-        theme +
-        scale_x_date(date_breaks="1 month", date_labels = "%b") + 
-        labs(x="", y="Cases & Tests per 100,000", color="Legend") +
-  theme(legend.position = c(0.2, 0.8), legend.title = element_blank(), legend.background = element_blank())
-p
-ggsave(p, file = "figs/daily_cases_tests_100k_BGD_trend.svg", units = "cm", dpi = "retina", width = 15, height = 12)
-
-# Daily test positivity
-p <- ggplot(data.daily, aes(x=date)) + 
-        geom_line(aes(y = positivity), color="forestgreen", alpha=0.5) +
-        geom_smooth(aes(y = positivity), color="forestgreen", span=0.15) +
-        theme +
-        scale_x_date(date_breaks="1 month", date_labels = "%b") + 
-        labs(x="", y="Positivity (cases/tests)", color="Legend")
-p
-ggsave(p, file = "figs/daily_positivity_BGD_trend.svg", units = "cm", dpi = "retina", width = 15, height = 12)
 
 ################################################################
 # Probability of a false negative RAT result broken down by day from self-reported symptom onset for primary contacts
@@ -225,13 +186,10 @@ p <- ggplot(class_perc, aes(x = factor(days_since), y = FNPerc)) +
 
 p
 ggsave(p, file = "figs/false_negs_days_since_offset.svg", units = "cm", dpi = "retina", width = 15, height = 12)
-ggsave(p, file = "figs/false_negs_days_since_offset.pdf", units = "cm", dpi = "retina", width = 15, height = 12)
-
-sum(class_perc$FN)
-sum(class_perc$N)
+ggsave(p, file = "figs/Fig2_false_negs_days_since_offset.pdf", units = "cm", dpi = "retina", width = 15, height = 12)
 
 ############################################
-# Summary of test comparion results
+# Summary of test comparison results
 sum(class_perc$FN)
 sum(class_perc$N)
 fn <- sum(class_perc$FN)/sum(class_perc$N)
@@ -300,7 +258,7 @@ p <- ggplot(data=df_long, aes(x=type, y=tests, fill = res)) +
   theme_clean() + theme(axis.title=element_text(size=15), axis.text=element_text(size=12), 
                         legend.text=element_text(size=12), legend.title=element_text(size=12), 
                         plot.background = element_rect(color = "white"), legend.background = element_rect(color = NA),
-                        strip.text=element_text(size=15), legend.position = c(0.8,0.8)) + labs(fill = "Results") + scale_fill_brewer(palette="Paired")
+                        strip.text=element_text(size=12), legend.position = c(0.8,0.8)) + labs(fill = "Results") + scale_fill_brewer(palette="Paired")
 p
 ggsave(p, file = "figs/Fig4_testing_comparison.pdf", units = "cm", dpi = "retina", width = 10, height = 15)
 
