@@ -24,10 +24,9 @@ library(ggplot2)
 * Some cases with invalid RT. We treat them as missing.
 
 ```{r}
-dat=read.csv('data/RAT_phase2_w_PCR.csv') %>%
-# dat=read.csv('data/RAT_phase2_w_PCR_2021_07_26.csv') %>%
+dat=read.csv('data/RAT_phase2_w_PCR_2021_07_26_deid.csv') %>%
   data.frame(.) %>%
-  arrange(mobile) %>%
+  arrange(mobile_deid) %>%
   mutate( vvf_nasal = na_if(vvf_nasal,'NaN'),
           vvf_saliva = na_if(vvf_saliva,'NaN')
           ) %>%
@@ -50,14 +49,14 @@ dat=read.csv('data/RAT_phase2_w_PCR.csv') %>%
                      ifelse(rt_saliva2=='positive' | rt_nasal2=='positive', 'positive', 'negative' )),
          rt3 = ifelse(is.na(rt_saliva3) | is.na(rt_nasal3), NA,
                       ifelse(rt_saliva3=='positive' | rt_nasal3=='positive', 'positive', 'negative' )))%>%
-  mutate(familyid = paste(mobile,sample_id,sep='_')) %>%
+  mutate(familyid = paste(mobile_deid,sample_id,sep='_')) %>%
   mutate(num_family = ( sec_person=='yes') + ( thrd_person=='yes'))
 
 
 #dat %>% select(vvf_saliva, sec_saliva, thrd_saliva, rt_saliva, vvf_nasal, sec_nasal, thrd_nasal,rt_nasal,rt)
-#table(duplicated(dat$mobile))
+#table(duplicated(dat$mobile_deid))
 
-#aa=dat %>% filter(mobile %in% dat$mobile[duplicated(dat$mobile)==TRUE])
+#aa=dat %>% filter(mobile_deid %in% dat$mobile_deid[duplicated(dat$mobile_deid)==TRUE])
 
 # dat.long = rbind(
 #   dat %>% select(familyid,sample_id, age, sex, rt_saliva, rt_nasal, rt, PCR_result),
@@ -99,7 +98,7 @@ run_anal<-function(x=dat$vvf_saliva,y=dat$PCR_result, method.label='test'){
 dat %>% filter(vvf!='yes' | is.na(vvf_nasal) |  is.na(vvf_saliva) | is.na(PCR_result) | PCR_result>1) %>%
 #  select(vvf, vvf_saliva, vvf_nasal, sec_nasal,thrd_nasal, rt_saliva2,rt_nasal2,rt_nasal3,rt1,rt2,rt3)
 #%>%
-  select(mobile, vvf, age,vvf_saliva,vvf_nasal,PCR_result)
+  select(mobile_deid, vvf, age,vvf_saliva,vvf_nasal,PCR_result)
 
 dat = dat %>% filter(vvf=='yes' & is.na(vvf_nasal)==FALSE  &  is.na(vvf_saliva)==FALSE &  is.na(PCR_result)==FALSE & PCR_result<2)
 ```
@@ -286,7 +285,11 @@ figdat$testessay = factor(figdat$testessay , levels=c(' saliva',' nasal',' both'
  
  ss
  
- png('Fig1_sssp.png',width=3000, height=1200, res=300)
+ png('figs/Fig1_sssp.png',width=3000, height=1200, res=300)
  gridExtra::grid.arrange(ss,sp,ncol=2);dev.off()
+ 
+ p <-  gridExtra::grid.arrange(ss,sp,ncol=2)
+ggsave(p, file = "figs/Fig1_ssp.pdf", units = "cm", dpi = "retina", width = 20, height = 10)
+
  
 ```

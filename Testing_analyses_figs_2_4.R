@@ -129,7 +129,7 @@ ggsave(p, file = "figs/Fig3_weekly_testing_dhaka.pdf", units = "cm", dpi = "reti
 # Probability of a false negative RAT result broken down by day from self-reported symptom onset for primary contacts
 # Data read in
 metadat <- read.csv("data/metadata-phaseII.csv") 
-RAT <- read.csv("data/RAT_phase2_w_PCR.csv")
+RAT <- read.csv('data/RAT_phase2_w_PCR_2021_07_26_deid.csv')
 
 # Match up IDs
 RAT$id <- RAT$sample_id
