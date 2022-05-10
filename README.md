@@ -3,7 +3,8 @@
 [![DOI](https://zenodo.org/badge/432151026.svg)](https://zenodo.org/badge/latestdoi/432151026)
 
 Code and data used in: 
-Sania A, Alam A, Alamgir ASM, Andrecka J, Brum E, Chadwick FJ, Chowdhury T, Hasan ZMD, Hill DL, Khan F, Kundergorski ME, Lee S, Rahman M, Rayport YK, Shirin T, Tasneem M & Hampson K (2022) *Rapid Antigen Testing by Community Health Workers for detection of SARS-CoV-2 in Dhaka, Bangladesh: a cross-sectional study.* BMJ Open. XX(XX):XXXXX citation and doi to be added
+
+Sania A, Alam A, Alamgir ASM, Andrecka J, Brum E, Chadwick FJ, Chowdhury T, Hasan ZMD, Hill DL, Khan F, Kundergorski ME, Lee S, Rahman M, Rayport YK, Shirin T, Tasneem M & Hampson K (2022) *Rapid Antigen Testing by Community Health Workers for detection of SARS-CoV-2 in Dhaka, Bangladesh: a cross-sectional study.* BMJ Open.
 
 Data are provided in the subfolder *data*. 
 
